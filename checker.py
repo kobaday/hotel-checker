@@ -153,7 +153,7 @@ def send_ntfy(topic: str, title: str, message: str, priority: str = "default") -
     """ntfy.sh で通知を送信する。"""
     priority_map = {"urgent": 5, "high": 4, "default": 3, "low": 2, "min": 1}
     resp = requests.post(
-        f"https://ntfy.sh/{topic}",
+        "https://ntfy.sh",
         json={
             "topic": topic,
             "title": title,
