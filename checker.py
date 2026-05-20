@@ -107,11 +107,11 @@ def check_availability(config: dict) -> dict:
             "checked_at": checked_at,
         }
 
-    # Shift-JIS でデコード
+    # UTF-8 でデコード（失敗時はShift-JISにフォールバック）
     try:
-        html = resp.content.decode("shift_jis")
+        html = resp.content.decode("utf-8")
     except UnicodeDecodeError:
-        html = resp.text
+        html = resp.content.decode("shift_jis", errors="replace")
 
     soup = BeautifulSoup(html, "html.parser")
 
