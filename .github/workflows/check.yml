@@ -1,0 +1,39 @@
+name: 空室チェック
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: チェックアウト
+        uses: actions/checkout@v4
+
+      - name: Python セットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 状態キャッシュを復元
+        uses: actions/cache@v4
+        with:
+          path: state.json
+          key: hotel-state-${{ github.run_number }}
+          restore-keys: |
+            hotel-state-
+
+      - name: 依存関係インストール
+        run: pip install -r requirements.txt
+
+      - name: 空室チェック実行
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          HOTEL_NAME: ${{ secrets.HOTEL_NAME }}
+          CHECK_DATE: ${{ secrets.CHECK_DATE }}
+          TARGET_ROOM_KEYWORD: ${{ secrets.TARGET_ROOM_KEYWORD }}
+          ADULTS: ${{ secrets.ADULTS }}
+        run: python checker.py
