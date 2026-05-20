@@ -7,7 +7,7 @@ import json
 import os
 import sys
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 import requests
 from bs4 import BeautifulSoup
@@ -89,7 +89,8 @@ def check_availability(config: dict) -> dict:
         "Content-Type": "application/x-www-form-urlencoded",
     }
 
-    checked_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    JST = timezone(timedelta(hours=9))
+    checked_at = datetime.now(JST).strftime("%Y-%m-%d %H:%M:%S JST")
 
     try:
         resp = requests.post(
@@ -150,13 +151,15 @@ def check_availability(config: dict) -> dict:
 
 def send_ntfy(topic: str, title: str, message: str, priority: str = "default") -> None:
     """ntfy.sh で通知を送信する。"""
+    priority_map = {"urgent": 5, "high": 4, "default": 3, "low": 2, "min": 1}
     resp = requests.post(
         f"https://ntfy.sh/{topic}",
-        data=message.encode("utf-8"),
-        headers={
-            "Title": title.encode("utf-8"),
-            "Priority": priority,
-            "Tags": "hotel",
+        json={
+            "topic": topic,
+            "title": title,
+            "message": message,
+            "priority": priority_map.get(priority, 3),
+            "tags": ["hotel"],
         },
         timeout=10,
     )
@@ -178,7 +181,7 @@ def main() -> None:
     if os.environ.get("ADULTS"):
         config["adults"] = int(os.environ.get("ADULTS"))
 
-    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] チェック開始")
+    print(f"[{datetime.now(timezone(timedelta(hours=9))).strftime('%Y-%m-%d %H:%M:%S JST')}] チェック開始")
     print(f"  対象: {hotel_name} / {check_date} / {target_keyword}")
 
     result = check_availability(config)
