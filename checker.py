@@ -212,7 +212,7 @@ def main() -> None:
     if not result["html_ok"]:
         prev_hash = state.get("last_html_hash")
         print(f"  [WARN] ページ構造が異常です (hash={result['html_hash'][:8]}...)")
-        if result["html_hash"] != prev_hash and prev_hash is not None and ntfy_topic:
+        if result["html_hash"] != prev_hash and ntfy_topic:
             try:
                 send_ntfy(
                     ntfy_topic,
