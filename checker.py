@@ -122,6 +122,7 @@ def check_availability(config: dict) -> dict:
     if not room_elements:
         # ページ構造が変化している
         html_hash = hashlib.md5(html.encode()).hexdigest()
+        page_title = soup.title.get_text(strip=True) if soup.title else "(タイトルなし)"
         return {
             "available": None,
             "html_ok": False,
@@ -129,6 +130,8 @@ def check_availability(config: dict) -> dict:
             "rooms": [],
             "error": None,
             "checked_at": checked_at,
+            "status_code": resp.status_code,
+            "page_title": page_title,
         }
 
     # 部屋名一覧を収集
@@ -217,14 +220,15 @@ def main() -> None:
 
     # ── HTML構造異常 ──────────────────────────────
     if not result["html_ok"]:
-        prev_hash = state.get("last_html_hash")
-        print(f"  [WARN] ページ構造が異常です (hash={result['html_hash'][:8]}...)")
-        if result["html_hash"] != prev_hash and ntfy_topic:
+        consecutive_html = state.get("consecutive_html_errors", 0) + 1
+        print(f"  [WARN] ページ構造が異常です (hash={result['html_hash'][:8]}...) (連続 {consecutive_html} 回)")
+        print(f"  [WARN] ステータス: {result.get('status_code', '?')} / ページタイトル: {result.get('page_title', '?')}")
+        if consecutive_html == ERROR_NOTIFY_THRESHOLD and ntfy_topic:
             try:
                 send_ntfy(
                     ntfy_topic,
                     f"⚠️ HTMLが変化しました ({hotel_name})",
-                    f"{hotel_name} の予約ページ構造が変わった可能性があります。\n"
+                    f"{hotel_name} の予約ページ構造が {consecutive_html} 回連続で異常です。\n"
                     f"スクレイパーが正常に動作していないかもしれません。\n"
                     f"手動でサイトをご確認ください。\n"
                     f"確認時刻: {result['checked_at']}",
@@ -233,6 +237,7 @@ def main() -> None:
                 print("  ntfy通知: HTML変化通知を送信")
             except Exception as e:
                 print(f"  ntfy送信失敗: {e}", file=sys.stderr)
+        state["consecutive_html_errors"] = consecutive_html
         state["last_html_hash"] = result["html_hash"]
         state["consecutive_errors"] = 0
         save_state(state)
