@@ -186,12 +186,6 @@ def main() -> None:
         config["adults"] = int(os.environ.get("ADULTS"))
 
     print(f"[{datetime.now(timezone(timedelta(hours=9))).strftime('%Y-%m-%d %H:%M:%S JST')}] チェック開始")
-
-    # 深夜帯（JST 1時〜7時）はスキップ
-    jst_now = datetime.now(timezone(timedelta(hours=9)))
-    if 1 <= jst_now.hour < 7:
-        print(f"  深夜帯のためスキップ ({jst_now.hour}時台)")
-        return
     print(f"  対象: {hotel_name} / {check_date} / {target_keyword}")
 
     result = check_availability(config)
